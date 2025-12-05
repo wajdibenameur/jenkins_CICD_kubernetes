@@ -1,0 +1,89 @@
+pipeline {
+    agent any // Utilise l'agent par défaut Jenkins
+
+    environment {
+        IMAGE_NAME = "richardchesterwood/k8s-fleetman-webapp-angular"
+        IMAGE_TAG  = "release2"
+        // Le token SonarQube doit être défini dans Jenkins Credentials sous l'ID "sonar-token"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                echo "🔄 Checkout du code..."
+                checkout scm
+                script {
+                    env.COMMIT_ID = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "✅ Commit ID: ${env.COMMIT_ID}"
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "🐳 Construction de l'image Docker..."
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                echo "✅ Image construite : ${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo "🔍 Analyse SonarQube en cours..."
+                // Injection des variables d'environnement SonarQube
+                withSonarQubeEnv('SonarQube') {
+                    // Injection du token depuis Jenkins Credentials
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_AUTH_TOKEN')]) {
+                        script {
+                            def status = sh(script: """
+                                sonar-scanner \
+                                -Dsonar.projectKey=my-angular-app \
+                                -Dsonar.sources=src \
+                                -Dsonar.host.url=$SONAR_HOST_URL \
+                                -Dsonar.login=$SONAR_AUTH_TOKEN
+                            """, returnStatus: true)
+
+                            if (status != 0) {
+                                echo "⚠️ SonarQube analysis failed, but pipeline continues."
+                            } else {
+                                echo "✅ SonarQube analysis completed."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo "🚀 Déploiement sur Kubernetes..."
+                script {
+                    try {
+                        sh """
+                            sed -i 's|image:.*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' manifests/workloads.yaml
+                            kubectl apply -f manifests/
+                            kubectl get pods
+                        """
+                        echo "✅ Déploiement Kubernetes réussi."
+                    } catch (err) {
+                        echo "❌ Déploiement Kubernetes échoué : ${err}"
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 Pipeline terminé avec succès !"
+        }
+        failure {
+            echo "❌ Pipeline terminé avec des erreurs."
+        }
+        always {
+            echo "📌 Pipeline exécuté, vérifiez les logs pour les détails."
+        }
+    }
+}
