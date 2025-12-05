@@ -1,209 +1,370 @@
+Voici les corrections à apporter au README :
+
+## 🔧 Corrections nécessaires
+
+### 1. **Formatage du diagramme Mermaid** (Section Architecture)
+**Problème** : Le code mermaid n'est pas dans un bloc code avec backticks.
+**Solution** : Ajouter des backticks avec "mermaid"
+
+**À corriger :**
+```markdown
+## 🏗 Architecture
+```mermaid
+graph TB
+    A[GitHub] -->|Webhook| B[Ngrok Tunnel]
+    B --> C[Jenkins sur VM Ubuntu 24.04]
+    C --> D[Blue Ocean Interface]
+    D --> E[Pipeline CI/CD]
+    E --> F[Docker Build dans Minikube]
+    F --> G[Kubernetes Deployment]
+    G --> H[Application Angular]
+    
+    I[Utilisateur] -->|SSH| J[MobaXterm]
+    J --> C
+    
+    style A fill:#181717,stroke:#333
+    style B fill:#1F1E37,stroke:#333
+    style C fill:#E95420,stroke:#333
+    style J fill:#FF6600,stroke:#333
+```
+```
+
+### 2. **Liens dans la table des matières**
+**Problème** : Le lien pour "Architecture" dans le sommaire ne fonctionnera pas car l'ID n'est pas exact.
+**Solution** : Assurez-vous que les liens correspondent exactement aux IDs des titres.
+
+### 3. **Installation Jenkins** - Commandes améliorées
+**Problème** : La commande d'installation Jenkins peut échouer.
+**Solution** : Ajouter la vérification Java :
+
+```bash
+# Ajouter cette étape avant Jenkins
+sudo apt install -y openjdk-17-jdk
+```
+
+### 4. **Installation Ngrok** - Ubuntu 24.04 spécifique
+**Problème** : Le référentiel "buster" est pour Debian 10.
+**Solution** : Utiliser l'installation directe :
+
+```bash
+# Alternative pour Ubuntu 24.04
+curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+echo "deb https://ngrok-agent.s3.amazonaws.com jammy main" | sudo tee /etc/apt/sources.list.d/ngrok.list  # Utiliser 'jammy' pour Ubuntu 22.04/24.04
+sudo apt update
+sudo apt install ngrok
+```
+
+### 5. **Jenkinsfile** - Plus détaillé
+**Problème** : Les commentaires `/* ... */` dans Groovy doivent être sur une seule ligne.
+**Solution** : Remplacer par :
+
+```groovy
+pipeline {
+    agent any
+    stages {
+        stage('Preparation') {
+            steps {
+                script {
+                    checkout scm
+                    commit_id = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                }
+            }
+        }
+        stage('Build Angular') {
+            steps {
+                sh 'npm install'
+                sh 'ng build'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                sh "docker build -t angular-app:${commit_id} ."
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh "kubectl apply -f manifests/"
+            }
+        }
+    }
+}
+```
+
+## ✅ README corrigé
+
 # 🚀 CI/CD DevOps Automation avec Jenkins, Docker & Kubernetes
 
 ![DevOps](https://img.shields.io/badge/DevOps-Automation-blue)
 ![Jenkins](https://img.shields.io/badge/Jenkins-Pipeline-orange)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestration-326CE5)
-![Docker](https://img.shields.io/badge/Docker-Containers-2496ED)
+![Angular](https://img.shields.io/badge/Angular-DD0031?style=flat&logo=angular&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=flat&logo=ubuntu&logoColor=white)
 
-## 📋 Table des matières
+## 📋 Sommaire
 - [🎯 Vue d'ensemble](#-vue-densemble)
 - [🏗 Architecture](#-architecture)
-- [📦 Prérequis](#-prérequis)
-- [⚙️ Installation](#️-installation)
-- [🚀 Utilisation](#-utilisation)
-- [🔧 Configuration](#-configuration)
-- [📊 Monitoring](#-monitoring)
-- [🤝 Contribution](#-contribution)
-- [📄 Licence](#-licence)
+- [🚀 Installation rapide](#-installation-rapide)
+- [⚡ Pipeline Jenkins](#-pipeline-jenkins)
+- [🔗 Exposition avec Ngrok](#-exposition-avec-ngrok)
+- [💻 Accès SSH MobaXterm](#-accès-ssh-mobaxterm)
+- [📁 Fichiers clés](#-fichiers-clés)
+- [🔧 Dépannage rapide](#-dépannage-rapide)
 - [👤 Auteur](#-auteur)
 
 ## 🎯 Vue d'ensemble
+Ce projet implémente un pipeline CI/CD DevOps complet déployé sur une VM Ubuntu 24.04 permettant le déploiement automatique d'une application Angular à chaque `git push`. Le pipeline utilise Jenkins avec Blue Ocean, expose Jenkins via Ngrok pour les webhooks GitHub, et permet l'accès SSH via MobaXterm:
 
-Ce projet implémente un **pipeline CI/CD DevOps complet** permettant le déploiement automatique d'une application **Spring Boot** à chaque `git push`. L'architecture intègre les meilleures pratiques DevOps avec des outils modernes pour l'intégration, le déploiement et la supervision.
+- **Jenkins + Blue Ocean** : Automatisation
+- **Docker + Minikube** : Conteneurisation
+- **Ngrok** : Exposition sécurisée
+- **MobaXterm** : Accès SSH
 
 ## 🏗 Architecture
 
 ```mermaid
-graph LR
-    A[GitHub] --> B[Jenkins]
-    B --> C[SonarQube]
-    B --> D[Docker Build]
-    D --> E[Docker Registry]
-    E --> F[Kubernetes]
-    F --> G[Application]
-    G --> H[Grafana]
-    G --> I[Elasticsearch]
+graph TB
+    A[GitHub] -->|Webhook| B[Ngrok Tunnel]
+    B --> C[Jenkins sur VM Ubuntu 24.04]
+    C --> D[Blue Ocean Interface]
+    D --> E[Pipeline CI/CD]
+    E --> F[Docker Build dans Minikube]
+    F --> G[Kubernetes Deployment]
+    G --> H[Application Angular]
     
-    style A fill:#f9f,stroke:#333
-    style B fill:#f96,stroke:#333
-    style F fill:#69f,stroke:#333
+    I[Utilisateur] -->|SSH| J[MobaXterm]
+    J --> C
+    
+    style A fill:#181717,stroke:#333
+    style B fill:#1F1E37,stroke:#333
+    style C fill:#E95420,stroke:#333
+    style J fill:#FF6600,stroke:#333
 ```
 
-## 📦 Prérequis
+## 🚀 Installation rapide
 
-### 🛠 Outils requis
-- **Java 17+**
-- **Maven 3.6+**
-- **Docker 20.10+**
-- **Kubernetes 1.24+** (ou Minikube)
-- **Jenkins 2.387+**
-- **SonarQube 9.9+**
-- **Git 2.35+**
-
-### 🌐 Services cloud (optionnels)
-- Docker Hub ou Registry privé
-- Cluster Kubernetes (local ou cloud)
-
-## ⚙️ Installation
-
-### 1. Configuration de Jenkins
+### 1. VM Ubuntu 24.04
 ```bash
-# Installation sur Ubuntu/Debian
-sudo apt update
-sudo apt install jenkins
+# Mise à jour système
+sudo apt update && sudo apt upgrade -y
 
-# Démarrage du service
+# Outils de base
+sudo apt install -y git curl wget
+```
+
+### 2. Java (prérequis Jenkins)
+```bash
+sudo apt install -y openjdk-17-jdk
+```
+
+### 3. Jenkins + Blue Ocean
+```bash
+# Installation Jenkins
+curl -fsSL https://pkg.jenkins.io/debian/jenkins.io-2023.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update
+sudo apt install -y jenkins
+
+# Démarrage
 sudo systemctl start jenkins
 sudo systemctl enable jenkins
 
-# Accéder à Jenkins
-# http://localhost:8080
+# Mot de passe initial
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 
-### 2. Plugins Jenkins requis
-Installer les plugins suivants via Jenkins Dashboard:
-- **Git**
-- **Docker Pipeline**
-- **Kubernetes**
-- **SonarQube Scanner**
-- **Blue Ocean**
-- **Pipeline Utility Steps**
-
-### 3. Configuration du projet
-Clonez le dépôt et configurez les fichiers:
+### 4. Docker & Minikube
 ```bash
-git clone https://github.com/votre-utilisateur/votre-repo.git
-cd votre-repo
+# Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+sudo usermod -aG docker jenkins
+
+# Minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# Kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Démarrer Minikube
+minikube start --driver=docker
 ```
 
-## 🚀 Utilisation
+### 5. Ngrok
+```bash
+# Installation (Ubuntu 24.04)
+curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+echo "deb https://ngrok-agent.s3.amazonaws.com jammy main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+sudo apt update
+sudo apt install ngrok
 
-### Pipeline Jenkins
-Le pipeline est défini dans le fichier `Jenkinsfile`:
+# Configuration (obtenez votre token sur ngrok.com)
+ngrok config add-authtoken VOTRE_TOKEN
+```
 
+## ⚡ Pipeline Jenkins
+
+### Jenkinsfile principal
 ```groovy
 pipeline {
     agent any
     environment {
-        DOCKER_REGISTRY = 'docker.io'
-        DOCKER_IMAGE = 'votre-utilisateur/springboot-app'
-        K8S_NAMESPACE = 'default'
+        COMMIT_ID = ''
     }
     stages {
-        // Voir le Jenkinsfile complet dans le projet
+        stage('Preparation') {
+            steps {
+                checkout scm
+                script {
+                    COMMIT_ID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                }
+            }
+        }
+        stage('Build Angular') {
+            steps {
+                sh 'npm install'
+                sh 'ng build --configuration=production'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                sh "docker build -t angular-app:${COMMIT_ID} ."
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh "kubectl apply -f manifests/"
+            }
+        }
     }
 }
 ```
 
-### Démarrage du pipeline
-1. Créez un nouveau pipeline dans Jenkins
-2. Sélectionnez "Pipeline from SCM"
-3. Configurez votre dépôt Git
-4. Lancez le pipeline manuellement ou configurez les webhooks GitHub
+### Plugins requis
+- Blue Ocean (interface visuelle)
+- Git & GitHub Integration
+- Docker Pipeline
+- Kubernetes
 
-## 🔧 Configuration
+## 🔗 Exposition avec Ngrok
 
-### Structure des fichiers
+### 1. Tunnel pour Jenkins
+```bash
+# Lancer Ngrok
+ngrok http 8080
 ```
-.
-├── src/
-│   └── main/
-├── pom.xml
-├── Dockerfile
-├── Jenkinsfile
-├── k8s/
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── ingress.yaml
-├── docker-compose.yml
-└── README.md
+→ URL Ngrok affichée (ex: `https://abc123.ngrok.io`)
+
+### 2. Webhook GitHub
+```
+Settings → Webhooks → Add webhook
+Payload URL: https://abc123.ngrok.io/github-webhook/
+Content type: application/json
+Events: Just the push event
 ```
 
-### Configuration Kubernetes
-Exemple de fichier `deployment.yaml`:
+## 💻 Accès SSH MobaXterm
+
+### Configuration
+1. **Ouvrez MobaXterm** → **Session** → **SSH**
+2. **Remote host** : IP de votre VM
+3. **Username** : utilisateur VM
+4. **Port** : 22
+5. **Advanced SSH settings** → Use private key (si authentification par clé)
+
+### Fonctionnalités utiles
+- Glisser-déposer pour transférer des fichiers
+- Éditeur intégré pour modifier les fichiers
+- Terminal multi-onglets
+- Explorateur de fichiers SFTP
+
+## 📁 Fichiers clés
+
+### Structure minimale
+```
+├── Dockerfile              # Image Nginx + Angular
+├── Jenkinsfile            # Pipeline CI/CD
+├── nginx.conf            # Configuration Nginx
+├── manifests/
+│   ├── deployment.yaml   # Déploiement Kubernetes
+│   └── service.yaml     # Service Kubernetes
+└── src/                  # Code Angular
+```
+
+### Dockerfile essentiel
+```dockerfile
+FROM nginx:alpine
+RUN rm -rf /usr/share/nginx/html/*
+COPY dist/ /usr/share/nginx/html/
+COPY nginx.conf /etc/nginx/nginx.conf
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### manifests/deployment.yaml
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: springboot-app
+  name: angular-app
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: springboot-app
+      app: angular-app
   template:
     metadata:
       labels:
-        app: springboot-app
+        app: angular-app
     spec:
       containers:
       - name: app
-        image: votre-utilisateur/springboot-app:latest
+        image: angular-app:TAG  # Remplacé par Jenkins
         ports:
-        - containerPort: 8080
+        - containerPort: 80
 ```
 
-### Variables d'environnement
-Configurez ces variables dans Jenkins:
-- `SONAR_HOST_URL`: URL de votre instance SonarQube
-- `DOCKER_USERNAME`: Identifiant Docker Hub
-- `DOCKER_PASSWORD`: Token Docker Hub
-- `KUBECONFIG`: Configuration du cluster Kubernetes
+## 🔧 Dépannage rapide
 
-## 📊 Monitoring
+### Problèmes fréquents
 
-### Grafana Dashboard
-Accédez aux métriques de l'application via Grafana:
+| Problème | Solution |
+|----------|----------|
+| Jenkins inaccessible | `sudo systemctl restart jenkins` |
+| Minikube ne démarre pas | `minikube delete && minikube start --driver=docker` |
+| Pipeline échoue | Vérifier logs Jenkins → Console Output |
+| Ngrok déconnecté | `ngrok config add-authtoken NOUVEAU_TOKEN` |
+| SSH refusé | Vérifier `sudo systemctl status ssh` |
+
+### Commandes de vérification
 ```bash
-# Port-forward pour accéder à Grafana
-kubectl port-forward svc/grafana 3000:3000
-# http://localhost:3000
+# Statut services
+sudo systemctl status jenkins docker ssh
+
+# Logs Jenkins
+sudo tail -f /var/log/jenkins/jenkins.log
+
+# Statut Minikube
+minikube status
+kubectl get pods,services
+
+# IP de la VM
+ip addr show
 ```
-
-### Logs avec Elasticsearch
-Consultez les logs d'application:
-```bash
-# Recherche dans les logs
-kubectl logs -l app=springboot-app --tail=50
-```
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues! Veuillez suivre ces étapes:
-
-1. Forkez le projet
-2. Créez une branche (`git checkout -b feature/AmazingFeature`)
-3. Commitez vos changements (`git commit -m 'Add some AmazingFeature'`)
-4. Pushez sur la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une Pull Request
-
-## 📄 Licence
-
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 👤 Auteur
-
-**Wajdi Ben Ameur**
-- 📧 Email: ben.ameur.wajdi@gmail.com
-- 🌐 LinkedIn: [linkedin.com/in/wajdibenameur](https://linkedin.com/in/wajdi-ben-ameur)
-
+**Wajdi Ben Ameur**  
+📧 ben.ameur.wajdi@gmail.com  
+🌐 [LinkedIn](https://linkedin.com/in/wajdi-ben-ameur)  
 
 ---
 <div align="center">
-
-### 📚 Étudiant en Ingénierie Logicielle & DevOps
-### 🇹🇳 Tunisie
+📚 Étudiant en Ingénierie Logicielle & DevOps  
+🇹🇳 Tunisie  
 
 [⬆ Retour en haut](#-cicd-devops-automation-avec-jenkins-docker--kubernetes)
-
 </div>
