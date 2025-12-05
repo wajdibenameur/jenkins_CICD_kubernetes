@@ -268,9 +268,10 @@ ip addr show
 🌐 [LinkedIn](https://linkedin.com/in/wajdi-ben-ameur)  
 
 ---
-<div align="center">
-📚 Étudiant en Ingénierie Logicielle & DevOps  
-🇹🇳 Tunisie  
+<div align="center">  
+📚 Étudiant en 3ᵉ année d’Ingénierie Logicielle & DevOps
+🇹🇳 Tunisie | 🎯 Passionné par l’automatisation, le Cloud Native et les technologies DevOps
 
+💡 Intéressé par l’optimisation des pipelines CI/CD, l’orchestration Kubernetes et l’innovation dans les environnements Cloud.
 [⬆ Retour en haut](#-cicd-devops-automation-avec-jenkins-docker--kubernetes)
 </div>
